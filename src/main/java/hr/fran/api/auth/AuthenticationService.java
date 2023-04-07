@@ -96,12 +96,14 @@ public class AuthenticationService {
 
         refreshToken = authHeader.substring(7);
         userEmail=jwtService.extractUserEmail(refreshToken);
-        if(userEmail!=null && SecurityContextHolder.getContext().getAuthentication()==null){
 
-            UserDetails userDetails =  this.userRepository.findByEmail(userEmail).orElseThrow();
+        if(userEmail!=null){
+            var userDetails =  this.userRepository.findByEmail(userEmail).orElseThrow();
 
             if(jwtService.isTokenValid(refreshToken,userDetails)){
                 var accesToken = jwtService.generateToken(userDetails);
+                revokeAllUserTokens(userDetails);
+                saveUserToken(userDetails,accesToken);
                 var authResponse = AuthenticationResponse.builder()
                         .accessToken(accesToken)
                         .refreshToken(refreshToken)
