@@ -14,10 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -32,7 +29,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-//test
+
     public AuthenticationResponse register(RegisterRequest request,HttpServletResponse response) {
         var user = User.builder()
                 .firstName(request.getFirstName())
@@ -48,7 +45,8 @@ public class AuthenticationService {
 
         Cookie cookie = new Cookie("refresh_token",refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+//        cookie.setSecure(true);
+
         cookie.setPath("/");
         response.addCookie(cookie);
         return AuthenticationResponse.builder()
