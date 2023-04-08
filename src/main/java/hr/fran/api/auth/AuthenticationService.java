@@ -51,6 +51,9 @@ public class AuthenticationService {
         response.addCookie(cookie);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
+                .userRole(Role.USER)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .build();
     }
 
@@ -60,17 +63,21 @@ public class AuthenticationService {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
 
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        Role userRole= user.getRole();
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
         Cookie cookie = new Cookie("refresh_token",refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+//        cookie.setSecure(true);
         cookie.setPath("/");
         response.addCookie(cookie);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
+                .userRole(userRole)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .build();
     }
 
