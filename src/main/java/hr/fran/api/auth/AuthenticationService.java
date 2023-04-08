@@ -8,6 +8,7 @@ import hr.fran.api.token.TokenType;
 import hr.fran.api.user.Role;
 import hr.fran.api.user.User;
 import hr.fran.api.user.UserRepository;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationResponse register(RegisterRequest request) {
+    public AuthenticationResponse register(RegisterRequest request,HttpServletResponse response) {
         var user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -44,12 +45,20 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         saveUserToken(savedUser, jwtToken);
         var refreshToken = jwtService.generateRefreshToken(user);
-        return AuthenticationResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build();
+
+        Cookie cookie = new Cookie("refresh_token",refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return AuthenticationResponse.builder()
+                .accessToken(jwtToken)
+                .build();
     }
 
 
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request,HttpServletResponse response) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
 
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
@@ -57,8 +66,14 @@ public class AuthenticationService {
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
-
-        return AuthenticationResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build();
+        Cookie cookie = new Cookie("refresh_token",refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return AuthenticationResponse.builder()
+                .accessToken(jwtToken)
+                .build();
     }
 
     private void saveUserToken(User savedUser, String jwtToken) {
@@ -106,8 +121,13 @@ public class AuthenticationService {
                 saveUserToken(userDetails,accesToken);
                 var authResponse = AuthenticationResponse.builder()
                         .accessToken(accesToken)
-                        .refreshToken(refreshToken)
                         .build();
+
+                Cookie cookie = new Cookie("refresh_token",refreshToken);
+                cookie.setHttpOnly(true);
+                cookie.setSecure(true);
+                cookie.setPath("/");
+                response.addCookie(cookie);
 
                 new ObjectMapper().writeValue(response.getOutputStream(),authResponse);
             }
