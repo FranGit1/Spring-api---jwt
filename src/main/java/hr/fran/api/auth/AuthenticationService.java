@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -106,15 +107,21 @@ public class AuthenticationService {
 
 
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String refreshToken;
+//        final String authHeader = request.getHeader("Authorization");
+//        final String refreshToken=jwtService.getJwtRefreshTokenFromCookie(request);
+//        final String refreshToken;
         final String userEmail;
+        String refreshToken = Arrays.stream(request.getCookies())
+                .filter(cookie -> cookie.getName().equals("refresh_token"))
+                .findFirst()
+                .map(Cookie::getValue)
+                .orElse(null);
 
-        if(authHeader==null || !authHeader.startsWith("Bearer ")){
+        if(refreshToken==null){
             return;
         }
 
-        refreshToken = authHeader.substring(7);
+//        refreshToken = authHeader.substring(7);
         userEmail=jwtService.extractUserEmail(refreshToken);
 
         if(userEmail!=null){
